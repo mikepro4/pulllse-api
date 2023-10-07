@@ -70,11 +70,13 @@ module.exports = (app) => {
         return res.status(400).send("No userId provided in headers");
       }
 
-      const key = `${userId}/${uuidv4()}.caf`;
+      let uuid = uuidv4()
+
+      const key = `${userId}/${uuid}.m4a`;
       const command = new PutObjectCommand({
         Bucket: "my-audio-bucket-111",
         Key: key,
-        ContentType: "audio/x-caf",
+        ContentType: "audio/x-m4a",
       });
 
       const signedUrl = await getSignedUrl(s3Client, command, {
