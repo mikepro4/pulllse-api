@@ -5,6 +5,9 @@ const audioSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  duration: {
+    type: Number
+  },
   audioLink: {
     type: String,
     required: true,
@@ -13,7 +16,7 @@ const audioSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
-  userId: {
+  user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
     required: true,
