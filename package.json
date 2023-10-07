@@ -8,6 +8,14 @@
     "dev": "nodemon index.js"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.423.0",
+    "@aws-sdk/credential-provider-node": "^3.423.0",
+    "@aws-sdk/node-http-handler": "^3.374.0",
+    "@aws-sdk/protocol-http": "^3.374.0",
+    "@aws-sdk/s3-request-presigner": "^3.423.0",
+    "@aws-sdk/util-create-request": "^3.418.0",
+    "@aws-sdk/util-format-url": "^3.425.0",
+    "aws-sdk": "^2.1467.0",
     "bcrypt": "^5.1.1",
     "bcryptjs": "^2.4.3",
     "express": "^4.18.2",
@@ -15,6 +23,8 @@
     "mongoose": "^7.5.3",
     "nodemon": "^3.0.1",
     "passport": "^0.6.0",
-    "passport-local": "^1.0.0"
+    "passport-local": "^1.0.0",
+    "short-unique-id": "^5.0.3",
+    "uuid": "^9.0.1"
   }
 }

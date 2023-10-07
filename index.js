@@ -5,6 +5,8 @@ const bodyParser = require("body-parser");
 const keys = require("./config/keys");
 
 require("./models/User");
+require("./models/Audio");
+
 require("./services/passport");
 
 const app = express();
@@ -18,5 +20,6 @@ mongoose.connect(keys.mongoURI, {
 });
 
 require("./routes/authRoutes")(app);
+require("./routes/uploadRoutes")(app);
 const PORT = process.env.PORT || 4000;
 app.listen(PORT);

@@ -15,7 +15,9 @@ module.exports = (app) => {
 
         try {
           const token = jwt.sign({ userId: user._id }, "MY_SECRET_KEY");
-          res.send({ token });
+
+          // Send back both the token and the user ID
+          res.send({ token, userId: user._id.toString() });
         } catch (err) {
           return next(err);
         }
