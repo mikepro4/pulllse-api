@@ -42,15 +42,10 @@ module.exports = (app) => {
 
   app.post("/api/saveAudioLink", async (req, res) => {
     try {
-      const { audioLink, name, userId, duration } = req.body;
-
-      if (!audioLink || !name || !userId) {
-        return res.status(400).send("Missing required fields");
-      }
+      const { audioLink, name, duration } = req.body;
 
       const newAudio = new Audio({
         name,
-        userId,
         audioLink,
         duration
       });
