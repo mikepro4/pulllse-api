@@ -6,7 +6,7 @@ const bcrypt = require("bcryptjs");
 const keys = require("../config/keys");
 const { v4: uuidv4 } = require("uuid");
 const mongoose = require("mongoose");
-const Audio = mongoose.model("Audio");
+const Audios = mongoose.model("Audio");
 
 const s3Client = new S3Client({
   region: "us-east-2",
@@ -19,21 +19,19 @@ const s3Client = new S3Client({
 module.exports = (app) => {
   app.get("/api/userAudios", async (req, res) => {
     try {
-      // Extract userId from request headers or query (based on how you send it)
-      const auth = req.headers.authorization;
-      const userId = auth.slice(0, 10);
+      // You can extract userId from query or headers, depending on your client-side implementation
+      // For this example, I'll extract it from the query
+      const userId = req.query.userId;
 
       if (!userId) {
         return res.status(400).send("No userId provided");
       }
 
-      const audios = await Audio.find({
-        userId: mongoose.Types.ObjectId(userId),
-      })
+      const list = await Audios.find({ user: userId })
         .sort({ dateCreated: -1 }) // -1 for descending order, so latest posts come first
         .exec();
 
-      res.send(audios);
+      res.send(list);
     } catch (error) {
       console.error(error);
       res.status(500).send("Error fetching user audio posts");
@@ -42,12 +40,13 @@ module.exports = (app) => {
 
   app.post("/api/saveAudioLink", async (req, res) => {
     try {
-      const { audioLink, name, duration } = req.body;
+      const { audioLink, name, duration, user } = req.body;
 
-      const newAudio = new Audio({
+      const newAudio = new Audios({
         name,
         audioLink,
-        duration
+        duration,
+        user
       });
 
       const savedAudio = await newAudio.save();
