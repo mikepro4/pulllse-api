@@ -1,4 +1,8 @@
-const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
+const {
+  S3Client,
+  PutObjectCommand,
+  DeleteObjectCommand,
+} = require("@aws-sdk/client-s3");
 const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 const { createRequest } = require("@aws-sdk/util-create-request");
 const { formatUrl } = require("@aws-sdk/util-format-url");
@@ -17,6 +21,37 @@ const s3Client = new S3Client({
 });
 
 module.exports = (app) => {
+  app.post("/api/deleteAudio", async (req, res) => {
+    try {
+      const { key } = req.body;
+
+      if (!key) {
+        return res.status(400).send("No file key provided");
+      }
+
+      // Deleting from Amazon S3
+      const deleteCommand = new DeleteObjectCommand({
+        Bucket: "my-audio-bucket-111",
+        Key: key,
+      });
+
+      await s3Client.send(deleteCommand);
+
+      // Deleting from the Audios database model
+      await Audios.deleteOne({
+        audioLink:
+          "https://my-audio-bucket-111.s3.us-east-2.amazonaws.com/" + key,
+      });
+
+      res
+        .status(200)
+        .send({ message: "File and database record deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting file:", error);
+      res.status(500).send("Server Error");
+    }
+  });
+
   app.get("/api/userAudios", async (req, res) => {
     try {
       // You can extract userId from query or headers, depending on your client-side implementation
@@ -46,7 +81,7 @@ module.exports = (app) => {
         name,
         audioLink,
         duration,
-        user
+        user,
       });
 
       const savedAudio = await newAudio.save();
@@ -65,7 +100,7 @@ module.exports = (app) => {
         return res.status(400).send("No userId provided in headers");
       }
 
-      let uuid = uuidv4()
+      let uuid = uuidv4();
 
       const key = `${userId}/${uuid}.m4a`;
       const command = new PutObjectCommand({
