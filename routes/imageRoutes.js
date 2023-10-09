@@ -1,3 +1,6 @@
+const mongoose = require("mongoose");
+const Image = mongoose.model("Image");
+
 const {
   S3Client,
   PutObjectCommand,
@@ -6,8 +9,6 @@ const {
 const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 const keys = require("../config/keys");
 const { v4: uuidv4 } = require("uuid");
-const mongoose = require("mongoose");
-const Audios = mongoose.model("Audio");
 
 const s3Client = new S3Client({
   region: "us-east-2",
@@ -18,9 +19,10 @@ const s3Client = new S3Client({
 });
 
 module.exports = (app) => {
-  app.post("/api/deleteAudio", async (req, res) => {
+  app.post("/api/deleteImage", async (req, res) => {
     try {
       const { key } = req.body;
+      console.log(key);
 
       if (!key) {
         return res.status(400).send("No file key provided");
@@ -28,17 +30,11 @@ module.exports = (app) => {
 
       // Deleting from Amazon S3
       const deleteCommand = new DeleteObjectCommand({
-        Bucket: "my-audio-bucket-111",
+        Bucket: "my-photo-bucket-111", // Assuming same bucket is used for images
         Key: key,
       });
 
       await s3Client.send(deleteCommand);
-
-      // Deleting from the Audios database model
-      await Audios.deleteOne({
-        audioLink:
-          "https://my-audio-bucket-111.s3.us-east-2.amazonaws.com/" + key,
-      });
 
       res
         .status(200)
@@ -49,61 +45,64 @@ module.exports = (app) => {
     }
   });
 
-  app.get("/api/userAudios", async (req, res) => {
+  app.get("/api/userImages", async (req, res) => {
     try {
-      // You can extract userId from query or headers, depending on your client-side implementation
-      // For this example, I'll extract it from the query
       const userId = req.query.userId;
 
       if (!userId) {
         return res.status(400).send("No userId provided");
       }
 
-      const list = await Audios.find({ user: userId })
-        .sort({ dateCreated: -1 }) // -1 for descending order, so latest posts come first
-        .exec();
+      const userImage = await Image.findOne({ user: userId }).exec();
 
-      res.send(list);
+      if (!userImage) {
+        return res.status(404).send("Image not found for the given user");
+      }
+
+      res.send(userImage);
     } catch (error) {
       console.error(error);
-      res.status(500).send("Error fetching user audio posts");
+      res.status(500).send("Error fetching user's image");
     }
   });
 
-  app.post("/api/saveAudioLink", async (req, res) => {
+  app.post("/api/saveImageLink", async (req, res) => {
     try {
-      const { audioLink, name, duration, user } = req.body;
+      const { imageLink, user } = req.body;
+      console.log(imageLink);
 
-      const newAudio = new Audios({
-        name,
-        audioLink,
-        duration,
-        user,
-      });
+      // Option settings for the operation
+      const existingImage = await Image.findOne({ user: user });
 
-      const savedAudio = await newAudio.save();
-      res.status(200).json(savedAudio);
+      if (existingImage) {
+        existingImage.imageLink = imageLink;
+        await existingImage.save();
+        res.status(200).json(existingImage);
+      } else {
+        const newImage = new Image({ imageLink, user });
+        const savedImage = await newImage.save();
+        res.status(200).json(savedImage);
+      }
     } catch (error) {
-      console.error("Error saving audio:", error);
+      console.error("Error saving or updating image:", error);
       res.status(500).send("Server Error");
     }
   });
 
-  app.get("/api/upload", async (req, res) => {
+  app.get("/api/createImage", async (req, res) => {
     try {
       const userId = req.query.userId;
-
       if (!userId) {
         return res.status(400).send("No userId provided in headers");
       }
 
       let uuid = uuidv4();
+      const key = `${userId}/${uuid}.png`; // Assuming PNG images
 
-      const key = `${userId}/${uuid}.m4a`;
       const command = new PutObjectCommand({
-        Bucket: "my-audio-bucket-111",
+        Bucket: "my-photo-bucket-111", // Assuming same bucket is used for images
         Key: key,
-        ContentType: "audio/x-m4a",
+        ContentType: "image/jpeg", // Change if not PNG
       });
 
       const signedUrl = await getSignedUrl(s3Client, command, {
@@ -117,5 +116,3 @@ module.exports = (app) => {
     }
   });
 };
-
-//

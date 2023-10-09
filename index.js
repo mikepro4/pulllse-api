@@ -8,6 +8,7 @@ const cors = require("cors");
 require("./models/User");
 require("./models/Audio");
 require("./models/Pulse");
+require("./models/Image");
 
 require("./services/passport");
 
@@ -25,6 +26,7 @@ mongoose.connect(keys.mongoURI, {
 require("./routes/authRoutes")(app);
 require("./routes/uploadRoutes")(app);
 require("./routes/pulseRoutes")(app);
+require("./routes/imageRoutes")(app);
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT);
