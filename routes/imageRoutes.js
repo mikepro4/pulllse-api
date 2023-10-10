@@ -22,7 +22,6 @@ module.exports = (app) => {
   app.post("/api/deleteImage", async (req, res) => {
     try {
       const { key } = req.body;
-      console.log(key);
 
       if (!key) {
         return res.status(400).send("No file key provided");
@@ -69,7 +68,6 @@ module.exports = (app) => {
   app.post("/api/saveImageLink", async (req, res) => {
     try {
       const { imageLink, user } = req.body;
-      console.log(imageLink);
 
       // Option settings for the operation
       const existingImage = await Image.findOne({ user: user });
