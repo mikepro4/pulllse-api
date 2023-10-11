@@ -8,6 +8,7 @@ const keys = require("../config/keys");
 const { v4: uuidv4 } = require("uuid");
 const mongoose = require("mongoose");
 const Audios = mongoose.model("Audio");
+const UserInfo = mongoose.model("UserInfo");
 
 const s3Client = new S3Client({
   region: "us-east-2",
@@ -109,6 +110,12 @@ module.exports = (app) => {
       const signedUrl = await getSignedUrl(s3Client, command, {
         expiresIn: 3600,
       });
+
+      // Increment the postsCount for the user
+      await UserInfo.findOneAndUpdate(
+        { user: userId },
+        { $inc: { postsCount: 1 } }
+      );
 
       res.send({ key, url: signedUrl });
     } catch (err) {
