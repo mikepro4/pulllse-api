@@ -78,6 +78,7 @@ module.exports = (app) => {
           res.json({
             message: "User registered and authenticated successfully.",
             email: email,
+            userId: user._id.toString(),
             token,
           });
         } catch (error) {
