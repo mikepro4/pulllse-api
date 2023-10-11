@@ -6,6 +6,7 @@ const keys = require("./config/keys");
 const cors = require("cors");
 
 require("./models/User");
+require("./models/UserInfo");
 require("./models/Audio");
 require("./models/Pulse");
 require("./models/Image");
