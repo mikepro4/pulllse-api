@@ -3,8 +3,33 @@ const mongoose = require("mongoose");
 const jwt = require("jsonwebtoken");
 
 const User = mongoose.model("User");
+const UserInfo = mongoose.model("UserInfo");
 
 module.exports = (app) => {
+  app.get("/userinfo/:userId", async (req, res, next) => {
+    try {
+      const userId = req.params.userId;
+
+      // Check if user ID is a valid ObjectId
+      if (!mongoose.Types.ObjectId.isValid(userId)) {
+        return res.status(400).json({ message: "Invalid user ID." });
+      }
+
+      const userInfo = await UserInfo.findOne({ user: userId }).populate(
+        "user",
+        "email"
+      ); // This populates the 'user' field with its associated email
+
+      if (!userInfo) {
+        return res.status(404).json({ message: "User info not found." });
+      }
+
+      res.json(userInfo);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Server Error" });
+    }
+  });
   app.post("/signin", (req, res, next) => {
     passport.authenticate("local", (err, user, info) => {
       if (err) return next(err);
@@ -27,15 +52,23 @@ module.exports = (app) => {
 
   app.post("/signup", async (req, res, next) => {
     try {
-      const { email, password } = req.body;
+      const { email, password, userName } = req.body;
 
       let user = await User.findOne({ email });
       if (user) {
         return res.status(400).json({ message: "User already registered." });
       }
+
       user = new User({ email, password });
 
       await user.save();
+
+      const userInfo = new UserInfo({
+        user: user._id,
+        userName,
+      });
+
+      await userInfo.save();
 
       req.logIn(user, { session: false }, async (err) => {
         if (err) return next(err);
