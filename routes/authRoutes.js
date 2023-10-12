@@ -18,7 +18,10 @@ module.exports = (app) => {
           const token = jwt.sign({ userId: user._id }, "MY_SECRET_KEY");
 
           // Send back both the token and the user ID
-          res.send({ token, userId: user._id.toString() });
+          res.send({
+            token,
+            userId: user._id.toString(),
+          });
         } catch (err) {
           return next(err);
         }
@@ -51,11 +54,13 @@ module.exports = (app) => {
 
         try {
           const token = jwt.sign({ userId: user._id }, "MY_SECRET_KEY");
+          console.log(token);
           res.json({
             message: "User registered and authenticated successfully.",
             email: email,
             userId: user._id.toString(),
             token,
+            userName,
           });
         } catch (error) {
           return next(error);

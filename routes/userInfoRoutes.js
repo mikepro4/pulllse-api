@@ -1,8 +1,54 @@
 const mongoose = require("mongoose");
-
+const Followers = mongoose.model("Followers");
+const Subscribers = mongoose.model("Subscribers");
 const UserInfo = mongoose.model("UserInfo");
+const Following = mongoose.model("Following");
 
 module.exports = (app) => {
+  app.post("/followUser", async (req, res) => {
+    try {
+      const loggedInUserId = req.body.loggedInUserId;
+      const userIdToFollow = req.body.userIdToFollow;
+
+      // Update Followers collection
+      let followerRecord = await Followers.findOne({ user: loggedInUserId });
+      if (!followerRecord) {
+        followerRecord = new Followers({ user: loggedInUserId });
+      }
+      followerRecord.followers.push(userIdToFollow);
+      await followerRecord.save();
+
+      // Update Following collection for the logged-in user
+      let followingRecord = await mongoose
+        .model("Following")
+        .findOne({ user: loggedInUserId });
+      if (!followingRecord) {
+        followingRecord = new mongoose.model("Following")({
+          user: loggedInUserId,
+        });
+      }
+      followingRecord.following.push(userIdToFollow);
+      await followingRecord.save();
+
+      // Increment followersCount for the user being followed
+      await UserInfo.updateOne(
+        { user: userIdToFollow },
+        { $inc: { followersCount: 1 } }
+      );
+
+      // Increment followingCount for the logged-in user
+      await UserInfo.updateOne(
+        { user: loggedInUserId },
+        { $inc: { followingCount: 1 } }
+      );
+
+      res.status(200).json({ message: "Followed successfully" });
+    } catch (error) {
+      console.error("Error following user:", error);
+      res.status(500).send("Server Error");
+    }
+  });
+
   app.get("/searchUser", async (req, res) => {
     try {
       const { q } = req.query;
@@ -15,7 +61,7 @@ module.exports = (app) => {
 
       const matchedProfiles = await UserInfo.find(
         searchCriteria,
-        "userName profileImage _id"
+        "user userName profileImage _id "
       )
         .populate("profileImage", "imageLink")
         .limit(10);
@@ -30,7 +76,7 @@ module.exports = (app) => {
     try {
       const initialProfiles = await UserInfo.find(
         {},
-        "userName profileImage _id"
+        "user userName profileImage _id"
       )
         .populate("profileImage", "imageLink")
         .limit(10);

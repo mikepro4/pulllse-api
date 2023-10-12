@@ -10,6 +10,9 @@ require("./models/UserInfo");
 require("./models/Audio");
 require("./models/Pulse");
 require("./models/Image");
+require("./models/Followers");
+require("./models/Subscribers");
+require("./models/Following");
 
 require("./services/passport");
 
