@@ -28,6 +28,7 @@ require("./routes/authRoutes")(app);
 require("./routes/uploadRoutes")(app);
 require("./routes/pulseRoutes")(app);
 require("./routes/imageRoutes")(app);
+require("./routes/userInfoRoutes")(app);
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT);

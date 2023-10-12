@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const Image = mongoose.model("Image");
+const UserInfo = mongoose.model("UserInfo");
 
 const {
   S3Client,
@@ -69,18 +70,27 @@ module.exports = (app) => {
     try {
       const { imageLink, user } = req.body;
 
-      // Option settings for the operation
-      const existingImage = await Image.findOne({ user: user });
+      // Check if the image already exists for the user
+      let image = await Image.findOne({ user: user });
 
-      if (existingImage) {
-        existingImage.imageLink = imageLink;
-        await existingImage.save();
-        res.status(200).json(existingImage);
+      if (image) {
+        // Update the existing image link
+        image.imageLink = imageLink;
+        await image.save();
       } else {
-        const newImage = new Image({ imageLink, user });
-        const savedImage = await newImage.save();
-        res.status(200).json(savedImage);
+        // Create a new image document and save it
+        image = new Image({ imageLink, user });
+        await image.save();
       }
+
+      // Find and update the UserInfo document with the new or updated image's _id
+      const userInfo = await UserInfo.findOne({ user: user });
+      if (userInfo) {
+        userInfo.profileImage = image._id;
+        await userInfo.save();
+      } // You can add an else condition here if you want to handle the case where UserInfo doesn't exist for the user
+
+      res.status(200).json(image);
     } catch (error) {
       console.error("Error saving or updating image:", error);
       res.status(500).send("Server Error");

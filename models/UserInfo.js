@@ -6,6 +6,11 @@ const userInfoSchema = new mongoose.Schema({
     ref: "User",
     required: true,
   },
+  profileImage: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Image",
+  },
+
   userName: {
     type: String,
     required: true,
