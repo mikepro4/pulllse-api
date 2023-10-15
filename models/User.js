@@ -11,9 +11,38 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  user: {
+  userName: {
+    type: String,
+    required: true,
+    unique: true,
+  },
+  profileImage: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "UserInfo",
+    ref: "Image",
+  },
+  dateCreated: {
+    type: Date,
+    default: Date.now,
+  },
+  postsCount: {
+    type: Number,
+    default: 0,
+  },
+  followersCount: {
+    type: Number,
+    default: 0,
+  },
+  subscribersCount: {
+    type: Number,
+    default: 0,
+  },
+  followingCount: {
+    type: Number,
+    default: 0,
+  },
+  notificationsCount: {
+    type: Number,
+    default: 0,
   },
 });
 

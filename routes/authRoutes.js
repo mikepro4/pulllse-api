@@ -38,23 +38,16 @@ module.exports = (app) => {
         return res.status(400).json({ message: "User already registered." });
       }
 
-      user = new User({ email, password });
+      user = new User({ email, password, userName });
 
       await user.save();
-
-      const userInfo = new UserInfo({
-        user: user._id,
-        userName,
-      });
-
-      await userInfo.save();
 
       req.logIn(user, { session: false }, async (err) => {
         if (err) return next(err);
 
         try {
           const token = jwt.sign({ userId: user._id }, "MY_SECRET_KEY");
-          console.log(token);
+
           res.json({
             message: "User registered and authenticated successfully.",
             email: email,

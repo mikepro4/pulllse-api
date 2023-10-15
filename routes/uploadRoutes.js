@@ -8,7 +8,7 @@ const keys = require("../config/keys");
 const { v4: uuidv4 } = require("uuid");
 const mongoose = require("mongoose");
 const Audios = mongoose.model("Audio");
-const UserInfo = mongoose.model("UserInfo");
+const User = mongoose.model("User");
 
 const s3Client = new S3Client({
   region: "us-east-2",
@@ -112,7 +112,7 @@ module.exports = (app) => {
       });
 
       // Increment the postsCount for the user
-      await UserInfo.findOneAndUpdate(
+      await User.findOneAndUpdate(
         { user: userId },
         { $inc: { postsCount: 1 } }
       );

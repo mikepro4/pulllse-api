@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 const Image = mongoose.model("Image");
-const UserInfo = mongoose.model("UserInfo");
+const User = mongoose.model("User");
 
 const {
   S3Client,
@@ -69,6 +69,7 @@ module.exports = (app) => {
   app.post("/api/saveImageLink", async (req, res) => {
     try {
       const { imageLink, user } = req.body;
+      console.log("user", user);
 
       // Check if the image already exists for the user
       let image = await Image.findOne({ user: user });
@@ -84,7 +85,7 @@ module.exports = (app) => {
       }
 
       // Find and update the UserInfo document with the new or updated image's _id
-      const userInfo = await UserInfo.findOne({ user: user });
+      const userInfo = await User.findOne({ _id: user });
       if (userInfo) {
         userInfo.profileImage = image._id;
         await userInfo.save();
