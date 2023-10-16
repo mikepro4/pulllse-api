@@ -3,7 +3,6 @@ const mongoose = require("mongoose");
 const jwt = require("jsonwebtoken");
 
 const User = mongoose.model("User");
-const UserInfo = mongoose.model("UserInfo");
 
 module.exports = (app) => {
   app.post("/signin", (req, res, next) => {

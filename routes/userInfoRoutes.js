@@ -28,17 +28,9 @@ module.exports = (app) => {
 
       // Fetch Following data
       const followingData = await Following.findOne({ user: userId })
-        .populate("following", "userName email")
-        .populate({
-          path: "following",
-          model: "User",
-          populate: {
-            path: "profileImage",
-            model: "Image", // Assuming you have an Image model defined elsewhere
-          },
-        })
+        .populate("following", "userName email imageLink")
         .exec();
-
+      console.log(followingData);
       // Check if followingData exists
       if (!followingData) {
         return res.status(404).json({ message: "Following list not found." });
@@ -70,21 +62,20 @@ module.exports = (app) => {
       }
 
       // Fetch the logged-in user's following list
-      const loggedInUserFollowingRecord = await Following.findOne({
+      const loggedInUserFollowingRecord = await Followers.findOne({
         user: userId,
       });
 
       let loggedInUserFollowing = [];
       if (loggedInUserFollowingRecord) {
-        loggedInUserFollowing = loggedInUserFollowingRecord.following.map(
+        loggedInUserFollowing = loggedInUserFollowingRecord.followers.map(
           (id) => String(id)
         );
       }
 
       // Fetch Followers data
       const followersData = await Followers.findOne({ user: userId })
-        .populate("followers", "userName email")
-        .populate("user", "profileImage")
+        .populate("followers", "userName email imageLink")
         .exec();
 
       // Check if followersData exists
@@ -227,17 +218,15 @@ module.exports = (app) => {
       const matchedProfiles = await User.find(
         {
           ...searchCriteria,
-          user: { $ne: loggedInUserId }, // exclude the logged-in user from the results
+          _id: { $ne: loggedInUserId }, // exclude the logged-in user from the results
         },
-        "user userName profileImage _id "
-      )
-        .populate("profileImage", "imageLink")
-        .limit(10);
+        " userName imageLink _id "
+      ).limit(10);
 
       // Modify each matched profile to include the isFollowing property
       const modifiedProfiles = matchedProfiles.map((profile) => ({
         ...profile._doc,
-        isFollowing: loggedInUserFollowing.includes(profile.user.toString()),
+        isFollowing: loggedInUserFollowing.includes(String(profile._id)),
       }));
 
       res.json(modifiedProfiles);
@@ -268,15 +257,12 @@ module.exports = (app) => {
         {
           _id: { $ne: loggedInUserId }, // Exclude the logged-in user
         },
-        "userName profileImage _id" // Corrected the projection here
-      )
-        .populate("profileImage", "imageLink")
-        .limit(10);
+        "userName imageLink _id" // Corrected the projection here
+      ).limit(10);
 
       // Modify each profile in initialProfiles to include the isFollowing property
       const modifiedInitialProfiles = initialProfiles.map((profile) => ({
         ...profile._doc,
-        profileImage: profile.profileImage, // Ensure profileImage is populated correctly
         isFollowing: loggedInUserFollowing.includes(String(profile._id)), // Convert ObjectId to string
       }));
 
@@ -296,10 +282,7 @@ module.exports = (app) => {
         return res.status(400).json({ message: "Invalid user ID." });
       }
 
-      const userInfo = await User.findOne({ _id: userId }).populate(
-        "profileImage",
-        "imageLink"
-      );
+      const userInfo = await User.findOne({ _id: userId });
 
       if (!userInfo) {
         return res.status(404).json({ message: "User info not found." });

@@ -16,9 +16,9 @@ const userSchema = new mongoose.Schema({
     required: true,
     unique: true,
   },
-  profileImage: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Image",
+  imageLink: {
+    type: String,
+    default: null,
   },
   dateCreated: {
     type: Date,

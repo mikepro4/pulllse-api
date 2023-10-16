@@ -45,26 +45,26 @@ module.exports = (app) => {
     }
   });
 
-  app.get("/api/userImages", async (req, res) => {
-    try {
-      const userId = req.query.userId;
+  // app.get("/api/userImages", async (req, res) => {
+  //   try {
+  //     const userId = req.query.userId;
 
-      if (!userId) {
-        return res.status(400).send("No userId provided");
-      }
+  //     if (!userId) {
+  //       return res.status(400).send("No userId provided");
+  //     }
 
-      const userImage = await Image.findOne({ user: userId }).exec();
+  //     const userImage = await User.findOne({ _id: userId }).exec();
 
-      if (!userImage) {
-        return res.status(404).send("Image not found for the given user");
-      }
+  //     if (!userImage) {
+  //       return res.status(404).send("Image not found for the given user");
+  //     }
 
-      res.send(userImage);
-    } catch (error) {
-      console.error(error);
-      res.status(500).send("Error fetching user's image");
-    }
-  });
+  //     res.send(userImage);
+  //   } catch (error) {
+  //     console.error(error);
+  //     res.status(500).send("Error fetching user's image");
+  //   }
+  // });
 
   app.post("/api/saveImageLink", async (req, res) => {
     try {
@@ -72,24 +72,13 @@ module.exports = (app) => {
       console.log("user", user);
 
       // Check if the image already exists for the user
-      let image = await Image.findOne({ user: user });
+      let image = await User.findOne({ _id: user });
 
       if (image) {
         // Update the existing image link
         image.imageLink = imageLink;
         await image.save();
-      } else {
-        // Create a new image document and save it
-        image = new Image({ imageLink, user });
-        await image.save();
       }
-
-      // Find and update the UserInfo document with the new or updated image's _id
-      const userInfo = await User.findOne({ _id: user });
-      if (userInfo) {
-        userInfo.profileImage = image._id;
-        await userInfo.save();
-      } // You can add an else condition here if you want to handle the case where UserInfo doesn't exist for the user
 
       res.status(200).json(image);
     } catch (error) {
