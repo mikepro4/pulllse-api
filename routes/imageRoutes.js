@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const Image = mongoose.model("Image");
+
 const User = mongoose.model("User");
 
 const {
@@ -69,7 +69,6 @@ module.exports = (app) => {
   app.post("/api/saveImageLink", async (req, res) => {
     try {
       const { imageLink, user } = req.body;
-      console.log("user", user);
 
       // Check if the image already exists for the user
       let image = await User.findOne({ _id: user });

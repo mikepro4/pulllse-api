@@ -21,7 +21,7 @@ const s3Client = new S3Client({
 module.exports = (app) => {
   app.post("/api/deleteAudio", async (req, res) => {
     try {
-      const { key } = req.body;
+      const { key, user } = req.body;
 
       if (!key) {
         return res.status(400).send("No file key provided");
@@ -34,7 +34,7 @@ module.exports = (app) => {
       });
 
       await s3Client.send(deleteCommand);
-
+      await User.findOneAndUpdate({ _id: user }, { $inc: { postsCount: -1 } });
       // Deleting from the Audios database model
       await Audios.deleteOne({
         audioLink:
@@ -81,7 +81,7 @@ module.exports = (app) => {
         duration,
         user,
       });
-
+      await User.findOneAndUpdate({ _id: user }, { $inc: { postsCount: 1 } });
       const savedAudio = await newAudio.save();
       res.status(200).json(savedAudio);
     } catch (error) {
@@ -112,10 +112,7 @@ module.exports = (app) => {
       });
 
       // Increment the postsCount for the user
-      await User.findOneAndUpdate(
-        { user: userId },
-        { $inc: { postsCount: 1 } }
-      );
+      // await User.findOneAndUpdate({ _id: userId }, { $inc: { postsCount: 1 } });
 
       res.send({ key, url: signedUrl });
     } catch (err) {

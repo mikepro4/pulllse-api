@@ -1,3 +1,5 @@
+const mongoose = require("mongoose");
+
 const notificationSchema = new mongoose.Schema({
   to: {
     type: mongoose.Schema.Types.ObjectId,
@@ -11,7 +13,7 @@ const notificationSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ["follow_request", "other_types_if_needed"],
+    enum: ["follow_request", "subscription_request"],
     default: "follow_request",
   },
   seen: {
@@ -24,4 +26,4 @@ const notificationSchema = new mongoose.Schema({
   },
 });
 
-mongoose.model("Notification", notificationSchema);
+mongoose.model("Notifications", notificationSchema);

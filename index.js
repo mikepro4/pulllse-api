@@ -9,10 +9,12 @@ require("./models/User");
 
 require("./models/Audio");
 require("./models/Pulse");
-require("./models/Image");
+
 require("./models/Followers");
-require("./models/Subscribers");
 require("./models/Following");
+require("./models/Subscribers");
+require("./models/Subscriptions");
+require("./models/Notifications");
 
 require("./services/passport");
 
@@ -32,6 +34,9 @@ require("./routes/uploadRoutes")(app);
 require("./routes/pulseRoutes")(app);
 require("./routes/imageRoutes")(app);
 require("./routes/userInfoRoutes")(app);
+require("./routes/notificationsRoutes")(app);
+require("./routes/subscribersRoutes")(app);
+require("./routes/followersRoutes")(app);
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT);
