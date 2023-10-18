@@ -78,77 +78,57 @@ module.exports = (app) => {
         loggedInUserFollowingRecord.following,
         subscriberRecord
       );
-      console.log("enhancedSubscribersData", enhancedSubscribersData);
-      // Fetch the subscribers that the logged-in user has subscribed to
-      //   const subscribersData = await Subscribers.findOne({
-      //     user: userId,
-      //   });
 
-      // Send the modified subscribers data as response
       res.json(enhancedSubscribersData);
     } catch (error) {
       console.error(error);
       res.status(500).json({ message: "Server Error" });
     }
   });
+  app.get("/fetchSubscribing", async (req, res) => {
+    try {
+      const userId = req.query.userId;
+      const loggedInUserId = req.query.loggedInUserId;
 
-  //    app.get("/fetchFollowers", async (req, res) => {
-  //      try {
-  //        const loggedInUserId = req.query.loggedInUserId;
-  //        const userId = req.query.userId;
+      // Check if user ID is a valid ObjectId
+      if (!mongoose.Types.ObjectId.isValid(userId)) {
+        return res.status(400).json({ message: "Invalid user ID." });
+      }
 
-  //        const followersData = await Followers.findOne({ user: userId })
-  //          .populate("followers", "userName email imageLink")
-  //          .exec();
+      // Fetch the subscribers of the user
+      const subscribingData = await Subscriptions.findOne({
+        user: userId,
+      })
+        .populate({
+          path: "subscribers.subscriber",
+          model: "User",
+          select: "userName email imageLink",
+        })
+        .exec();
 
-  //        const loggedInUserFollowingRecord =
-  //          (await Following.findOne({ user: loggedInUserId })) || {};
-  //        const subscriberRecord =
-  //          (await Subscriptions.findOne({ user: loggedInUserId })) || {};
+      const loggedInUserFollowingRecord =
+        (await Following.findOne({ user: loggedInUserId })) || {};
+      const subscriberRecord =
+        (await Subscriptions.findOne({ user: loggedInUserId })) || {};
 
-  //        const enhancedFollowersData = await enhanceUserData(
-  //          userId,
-  //          followersData.followers,
-  //          loggedInUserFollowingRecord.following,
-  //          subscriberRecord
-  //        );
-  //        console.log(enhancedFollowersData);
-  //        //  console.log("fetchFollowers", enhancedFollowersData);
-  //        res.json(enhancedFollowersData);
-  //      } catch (error) {
-  //        console.error(error);
-  //        res.status(500).json({ message: "Server Error" });
-  //      }
-  //    });
+      // Check if userSubscribersRecord exists
+      if (!subscribingData) {
+        return res.status(404).json({ message: "Subscribers list not found." });
+      }
 
-  //    app.get("/fetchFollowing", async (req, res) => {
-  //      try {
-  //        const userId = req.query.userId;
-  //        const followingData = await Following.findOne({ user: userId })
-  //          .populate("following", "userName email imageLink")
-  //          .exec();
+      const enhancedSubscribersData = await enhanceUserData(
+        userId,
+        subscribingData.subscriptions,
+        loggedInUserFollowingRecord.following,
+        subscriberRecord
+      );
 
-  //        const loggedInUserFollowingRecord =
-  //          (await Following.findOne({ user: userId })) || {};
-
-  //        const subscriberRecord =
-  //          (await Subscriptions.findOne({ user: userId })) || {};
-
-  //        console.log("subscriberRecord", subscriberRecord);
-  //        const enhancedFollowingData = await enhanceUserData(
-  //          userId,
-  //          followingData.following,
-  //          loggedInUserFollowingRecord.following,
-  //          subscriberRecord
-  //        );
-  //        console.log("enhancedFollowingData", enhancedFollowingData);
-
-  //        res.json(enhancedFollowingData);
-  //      } catch (error) {
-  //        console.error(error);
-  //        res.status(500).json({ message: "Server Error" });
-  //      }
-  //    });
+      res.json(enhancedSubscribersData);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Server Error" });
+    }
+  });
 
   app.post("/declineSubscription", async (req, res) => {
     try {
@@ -241,6 +221,41 @@ module.exports = (app) => {
       res.status(200).json({ message: "Subscription accepted" });
     } catch (error) {
       console.error("Error accepting subscription:", error);
+      res.status(500).send("Server Error");
+    }
+  });
+
+  app.post("/unsubscribeUser", async (req, res) => {
+    try {
+      const { userId, subscriberId } = req.body;
+      console.log("userId", userId);
+      console.log("subscriberId", subscriberId);
+
+      // Updating the Subscribers collection of the user being unsubscribed from
+      await Subscribers.updateOne(
+        { user: userId },
+        { $pull: { subscribers: { subscriber: subscriberId } } }
+      );
+
+      // Updating the Subscriptions collection of the unsubscribing user
+      await Subscriptions.updateOne(
+        { user: subscriberId },
+        { $pull: { subscriptions: { subscribee: userId } } }
+      );
+
+      // Optionally, you can also delete related notifications
+      await Notifications.deleteMany({
+        to: userId,
+        from: subscriberId,
+        type: "subscription_request",
+      });
+
+      // Optionally, decrement the subscribersCount in the User model of the unsubscribed user
+      await User.updateOne({ _id: userId }, { $inc: { subscribersCount: -1 } });
+
+      res.status(200).json({ message: "Unsubscribed successfully" });
+    } catch (error) {
+      console.error("Error unsubscribing from user:", error);
       res.status(500).send("Server Error");
     }
   });
