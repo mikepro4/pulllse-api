@@ -6,10 +6,45 @@ const userSchema = new mongoose.Schema({
     type: String,
     unique: true,
     required: true,
+    select: false,
   },
   password: {
     type: String,
     required: true,
+    select: false,
+  },
+  userName: {
+    type: String,
+    required: true,
+    unique: true,
+  },
+  imageLink: {
+    type: String,
+    default: null,
+  },
+  dateCreated: {
+    type: Date,
+    default: Date.now,
+  },
+  postsCount: {
+    type: Number,
+    default: 0,
+  },
+  followersCount: {
+    type: Number,
+    default: 0,
+  },
+  subscribersCount: {
+    type: Number,
+    default: 0,
+  },
+  followingCount: {
+    type: Number,
+    default: 0,
+  },
+  notificationsCount: {
+    type: Number,
+    default: 0,
   },
 });
 

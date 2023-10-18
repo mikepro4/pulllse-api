@@ -1,3 +1,5 @@
+const mongoose = require("mongoose");
+
 const subscribersSchema = new mongoose.Schema({
   user: {
     type: mongoose.Schema.Types.ObjectId,
@@ -13,7 +15,7 @@ const subscribersSchema = new mongoose.Schema({
       },
       status: {
         type: String,
-        enum: ["pending", "accepted"],
+        enum: ["pending", "accepted", "declined"],
         default: "pending",
       },
     },

@@ -19,7 +19,9 @@ passport.use(
     { usernameField: "email" },
     async (email, password, done) => {
       try {
-        const user = await User.findOne({ email });
+        const user = await User.findOne({ email })
+          .select("+email +password")
+          .exec();
         if (!user) return done(null, false, { message: "Incorrect email" });
 
         const isMatch = await user.comparePassword(password);

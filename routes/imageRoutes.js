@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
-const Image = mongoose.model("Image");
+
+const User = mongoose.model("User");
 
 const {
   S3Client,
@@ -44,43 +45,41 @@ module.exports = (app) => {
     }
   });
 
-  app.get("/api/userImages", async (req, res) => {
-    try {
-      const userId = req.query.userId;
+  // app.get("/api/userImages", async (req, res) => {
+  //   try {
+  //     const userId = req.query.userId;
 
-      if (!userId) {
-        return res.status(400).send("No userId provided");
-      }
+  //     if (!userId) {
+  //       return res.status(400).send("No userId provided");
+  //     }
 
-      const userImage = await Image.findOne({ user: userId }).exec();
+  //     const userImage = await User.findOne({ _id: userId }).exec();
 
-      if (!userImage) {
-        return res.status(404).send("Image not found for the given user");
-      }
+  //     if (!userImage) {
+  //       return res.status(404).send("Image not found for the given user");
+  //     }
 
-      res.send(userImage);
-    } catch (error) {
-      console.error(error);
-      res.status(500).send("Error fetching user's image");
-    }
-  });
+  //     res.send(userImage);
+  //   } catch (error) {
+  //     console.error(error);
+  //     res.status(500).send("Error fetching user's image");
+  //   }
+  // });
 
   app.post("/api/saveImageLink", async (req, res) => {
     try {
       const { imageLink, user } = req.body;
 
-      // Option settings for the operation
-      const existingImage = await Image.findOne({ user: user });
+      // Check if the image already exists for the user
+      let image = await User.findOne({ _id: user });
 
-      if (existingImage) {
-        existingImage.imageLink = imageLink;
-        await existingImage.save();
-        res.status(200).json(existingImage);
-      } else {
-        const newImage = new Image({ imageLink, user });
-        const savedImage = await newImage.save();
-        res.status(200).json(savedImage);
+      if (image) {
+        // Update the existing image link
+        image.imageLink = imageLink;
+        await image.save();
       }
+
+      res.status(200).json(image);
     } catch (error) {
       console.error("Error saving or updating image:", error);
       res.status(500).send("Server Error");
