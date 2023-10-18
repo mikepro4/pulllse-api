@@ -43,7 +43,7 @@ module.exports = (app) => {
       const followersData = await Followers.findOne({ user: userId })
         .populate("followers", "userName email imageLink")
         .exec();
-
+      console.log("followersData", followersData);
       const loggedInUserFollowingRecord =
         (await Following.findOne({ user: loggedInUserId })) || {};
       const subscriberRecord =
@@ -55,7 +55,7 @@ module.exports = (app) => {
         loggedInUserFollowingRecord.following,
         subscriberRecord
       );
-      console.log(enhancedFollowersData);
+      console.log("enhancedFollowersData", enhancedFollowersData);
       //  console.log("fetchFollowers", enhancedFollowersData);
       res.json(enhancedFollowersData);
     } catch (error) {
