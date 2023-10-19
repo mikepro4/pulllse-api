@@ -40,6 +40,40 @@ async function enhanceUserData(
   );
 }
 
+async function enhanceSubscribingUserData(
+  userId,
+  subscribingDataArray,
+  loggedInUserRecords,
+  subscriberRecords
+) {
+  loggedInUserRecords = loggedInUserRecords || [];
+  subscriberRecords = subscriberRecords.subscriptions || [];
+
+  return await Promise.all(
+    subscribingDataArray.map(async (subscribingData) => {
+      let isFollowing = loggedInUserRecords.includes(
+        subscribingData.subscribee._id
+      );
+
+      let subscription = subscriberRecords.find(
+        (sub) =>
+          String(sub.subscribee) === String(subscribingData.subscribee._id)
+      );
+
+      let isSubscribed = subscription ? subscription.status : "not_subscribed";
+
+      return {
+        _id: subscribingData.subscribee._id,
+        email: subscribingData.subscribee.email,
+        userName: subscribingData.subscribee.userName,
+        imageLink: subscribingData.subscribee.imageLink,
+        isFollowing,
+        isSubscribed,
+      };
+    })
+  );
+}
+
 module.exports = (app) => {
   app.get("/fetchSubscribers", async (req, res) => {
     try {
@@ -61,7 +95,7 @@ module.exports = (app) => {
           select: "userName email imageLink",
         })
         .exec();
-
+      console.log(subscribersData.subscribers);
       const loggedInUserFollowingRecord =
         (await Following.findOne({ user: loggedInUserId })) || {};
       const subscriberRecord =
@@ -90,40 +124,38 @@ module.exports = (app) => {
       const userId = req.query.userId;
       const loggedInUserId = req.query.loggedInUserId;
 
-      // Check if user ID is a valid ObjectId
-      if (!mongoose.Types.ObjectId.isValid(userId)) {
-        return res.status(400).json({ message: "Invalid user ID." });
-      }
-
-      // Fetch the subscribers of the user
+      // Fetch the subscribing data of the user
       const subscribingData = await Subscriptions.findOne({
         user: userId,
       })
         .populate({
-          path: "subscribers.subscriber",
+          path: "subscriptions.subscribee",
           model: "User",
           select: "userName email imageLink",
         })
         .exec();
+      subscribingData.subscriptions = subscribingData.subscriptions.filter(
+        (subscription) => subscription.status !== "pending"
+      );
 
       const loggedInUserFollowingRecord =
         (await Following.findOne({ user: loggedInUserId })) || {};
       const subscriberRecord =
         (await Subscriptions.findOne({ user: loggedInUserId })) || {};
 
-      // Check if userSubscribersRecord exists
+      // Check if subscribingData exists
       if (!subscribingData) {
-        return res.status(404).json({ message: "Subscribers list not found." });
+        return res.status(404).json({ message: "Subscribing list not found." });
       }
 
-      const enhancedSubscribersData = await enhanceUserData(
+      const enhancedSubscribingData = await enhanceSubscribingUserData(
         userId,
         subscribingData.subscriptions,
         loggedInUserFollowingRecord.following,
         subscriberRecord
       );
 
-      res.json(enhancedSubscribersData);
+      res.json(enhancedSubscribingData);
     } catch (error) {
       console.error(error);
       res.status(500).json({ message: "Server Error" });
@@ -217,6 +249,11 @@ module.exports = (app) => {
         user.subscribersCount += 1;
         await user.save();
       }
+      const user2 = await User.findById(subscriberId);
+      if (user2) {
+        user2.subscriptionsCount += 1;
+        await user2.save();
+      }
 
       res.status(200).json({ message: "Subscription accepted" });
     } catch (error) {
@@ -252,6 +289,10 @@ module.exports = (app) => {
 
       // Optionally, decrement the subscribersCount in the User model of the unsubscribed user
       await User.updateOne({ _id: userId }, { $inc: { subscribersCount: -1 } });
+      await User.updateOne(
+        { _id: subscriberId },
+        { $inc: { subscriptionsCount: -1 } }
+      );
 
       res.status(200).json({ message: "Unsubscribed successfully" });
     } catch (error) {

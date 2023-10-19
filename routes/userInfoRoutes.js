@@ -1,9 +1,35 @@
 const mongoose = require("mongoose");
-const Followers = mongoose.model("Followers");
-const Subscribers = mongoose.model("Subscribers");
+const Subscriptions = mongoose.model("Subscriptions");
 const User = mongoose.model("User");
 const Following = mongoose.model("Following");
 
+async function enhanceUserData(
+  userId,
+  userDataArray,
+  loggedInUserRecords,
+  subscriberRecords
+) {
+  loggedInUserRecords = loggedInUserRecords || [];
+  subscriberRecords = subscriberRecords.subscriptions || [];
+
+  return await Promise.all(
+    userDataArray.map(async (userData) => {
+      let isFollowing = loggedInUserRecords.includes(String(userData._id));
+
+      let subscription = subscriberRecords.find(
+        (sub) => String(sub.subscribee) === String(userData._id)
+      );
+
+      let isSubscribed = subscription ? subscription.status : "not_subscribed";
+
+      return {
+        ...userData._doc,
+        isFollowing,
+        isSubscribed,
+      };
+    })
+  );
+}
 module.exports = (app) => {
   app.get("/searchUser", async (req, res) => {
     try {
@@ -15,33 +41,27 @@ module.exports = (app) => {
         searchCriteria.userName = new RegExp(q, "i");
       }
 
-      // Fetch the users that the logged-in user is following
-      const loggedInUserFollowingRecord = await mongoose
-        .model("Following")
-        .findOne({ user: loggedInUserId });
-
-      let loggedInUserFollowing = [];
-      if (loggedInUserFollowingRecord) {
-        loggedInUserFollowing = loggedInUserFollowingRecord.following.map(
-          (id) => id.toString()
-        );
-      }
-
       const matchedProfiles = await User.find(
         {
           ...searchCriteria,
-          _id: { $ne: loggedInUserId }, // exclude the logged-in user from the results
+          _id: { $ne: loggedInUserId },
         },
         " userName imageLink _id "
       ).limit(10);
 
-      // Modify each matched profile to include the isFollowing property
-      const modifiedProfiles = matchedProfiles.map((profile) => ({
-        ...profile._doc,
-        isFollowing: loggedInUserFollowing.includes(String(profile._id)),
-      }));
+      const loggedInUserFollowingRecord =
+        (await Following.findOne({ user: loggedInUserId })) || {};
+      const subscriberRecord =
+        (await Subscriptions.findOne({ user: loggedInUserId })) || {};
 
-      res.json(modifiedProfiles);
+      const modifiedInitialProfiles = await enhanceUserData(
+        loggedInUserId,
+        matchedProfiles,
+        loggedInUserFollowingRecord.following,
+        subscriberRecord
+      );
+      console.log("modifiedInitialProfiles", modifiedInitialProfiles);
+      res.json(modifiedInitialProfiles);
     } catch (error) {
       console.error("Error fetching matched profiles: ", error);
       res.status(500).json({ message: "Server Error" });
@@ -50,38 +70,31 @@ module.exports = (app) => {
 
   app.get("/searchUser/fetchInitialProfiles", async (req, res, next) => {
     try {
-      const loggedInUserId = req.query.loggedInUserId; // Get the loggedInUserId from the query parameters
+      const loggedInUserId = req.query.loggedInUserId;
 
-      // Fetch the users that the logged-in user is following
-      const loggedInUserFollowingRecord = await mongoose
-        .model("Following")
-        .findOne({ user: loggedInUserId });
-
-      let loggedInUserFollowing = [];
-      if (loggedInUserFollowingRecord) {
-        loggedInUserFollowing = loggedInUserFollowingRecord.following.map(
-          (id) => String(id)
-        );
-      }
-
-      // Fetch initial profiles excluding the logged-in user
       const initialProfiles = await User.find(
         {
-          _id: { $ne: loggedInUserId }, // Exclude the logged-in user
+          _id: { $ne: loggedInUserId },
         },
-        "userName imageLink _id" // Corrected the projection here
+        "userName imageLink _id"
       ).limit(10);
 
-      // Modify each profile in initialProfiles to include the isFollowing property
-      const modifiedInitialProfiles = initialProfiles.map((profile) => ({
-        ...profile._doc,
-        isFollowing: loggedInUserFollowing.includes(String(profile._id)), // Convert ObjectId to string
-      }));
+      const loggedInUserFollowingRecord =
+        (await Following.findOne({ user: loggedInUserId })) || {};
+      const subscriberRecord =
+        (await Subscriptions.findOne({ user: loggedInUserId })) || {};
+
+      const modifiedInitialProfiles = await enhanceUserData(
+        loggedInUserId,
+        initialProfiles,
+        loggedInUserFollowingRecord.following,
+        subscriberRecord
+      );
 
       res.json(modifiedInitialProfiles);
     } catch (error) {
       console.error("Error fetching initial profiles: ", error);
-      res.status(500).json({ message: `Server Error: ${error.message}` }); // Enhanced error message
+      res.status(500).json({ message: `Server Error: ${error.message}` });
     }
   });
 
@@ -89,7 +102,6 @@ module.exports = (app) => {
     try {
       const userId = req.params.userId;
 
-      // Check if user ID is a valid ObjectId
       if (!mongoose.Types.ObjectId.isValid(userId)) {
         return res.status(400).json({ message: "Invalid user ID." });
       }
