@@ -15,6 +15,7 @@ require("./models/Following");
 require("./models/Subscribers");
 require("./models/Subscriptions");
 require("./models/Notifications");
+require("./models/UserLogs");
 
 require("./services/passport");
 
