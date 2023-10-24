@@ -20,6 +20,7 @@ module.exports = (app) => {
           res.send({
             token,
             userId: user._id.toString(),
+            userInfo: user,
           });
         } catch (err) {
           return next(err);
@@ -48,7 +49,7 @@ module.exports = (app) => {
 
         try {
           const token = jwt.sign({ userId: user._id }, "MY_SECRET_KEY");
-
+          console.log(token);
           res.json({
             message: "User registered and authenticated successfully.",
             email: email,
@@ -57,6 +58,7 @@ module.exports = (app) => {
             userName,
           });
         } catch (error) {
+          console.log(error);
           return next(error);
         }
       });

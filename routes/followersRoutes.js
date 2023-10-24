@@ -5,6 +5,7 @@ const Subscribers = mongoose.model("Subscribers");
 const Subscriptions = mongoose.model("Subscriptions");
 const User = mongoose.model("User");
 const Notifications = mongoose.model("Notifications");
+const createLog = require("../middlewares/createLog");
 
 async function enhanceUserData(
   userId,
@@ -93,32 +94,30 @@ module.exports = (app) => {
     }
   });
 
-  app.post("/unfollowUser", async (req, res) => {
+  app.post("/unfollowUser", createLog.logUserInteraction, async (req, res) => {
     try {
-      const loggedInUserId = req.body.loggedInUserId;
-      const userIdToUnfollow = req.body.userIdToUnfollow;
-
+      const { userId, targetUserId } = req.body;
       // Update Followers collection
       await Followers.updateOne(
-        { user: userIdToUnfollow },
-        { $pull: { followers: loggedInUserId } } // removed ObjectId conversion
+        { user: targetUserId },
+        { $pull: { followers: userId } } // removed ObjectId conversion
       );
 
       // Update Following collection for the logged-in user
       await Following.updateOne(
-        { user: loggedInUserId }, // removed ObjectId conversion
-        { $pull: { following: userIdToUnfollow } } // removed ObjectId conversion
+        { user: userId }, // removed ObjectId conversion
+        { $pull: { following: targetUserId } } // removed ObjectId conversion
       );
 
       // Decrement followersCount for the user being unfollowed
       await User.updateOne(
-        { _id: userIdToUnfollow }, // removed ObjectId conversion
+        { _id: targetUserId }, // removed ObjectId conversion
         { $inc: { followersCount: -1 } }
       );
 
       // Decrement followingCount for the logged-in user
       await User.updateOne(
-        { _id: loggedInUserId }, // removed ObjectId conversion
+        { _id: userId }, // removed ObjectId conversion
         { $inc: { followingCount: -1 } }
       );
 
@@ -128,55 +127,51 @@ module.exports = (app) => {
       res.status(500).send("Server Error");
     }
   });
-  app.post("/followUser", async (req, res) => {
+  app.post("/followUser", createLog.logUserInteraction, async (req, res) => {
     try {
-      const loggedInUserId = req.body.loggedInUserId;
-      const userIdToFollow = req.body.userIdToFollow;
+      const { userId, targetUserId } = req.body;
 
       // Prevent following oneself
-      if (loggedInUserId === userIdToFollow) {
+      if (userId === targetUserId) {
         return res.status(400).json({ message: "You cannot follow yourself" });
       }
 
       // Update Following collection for the logged-in user
-      let followingRecord = await Following.findOne({ user: loggedInUserId });
+      let followingRecord = await Following.findOne({ user: userId });
 
       if (!followingRecord) {
         followingRecord = new Following({
-          user: loggedInUserId,
+          user: userId,
         });
       }
 
       // Check if the user is already following the userToFollow
-      if (followingRecord.following.includes(userIdToFollow)) {
+      if (followingRecord.following.includes(targetUserId)) {
         return res
           .status(400)
           .json({ message: "You are already following this user" });
       }
 
-      followingRecord.following.push(userIdToFollow);
+      followingRecord.following.push(targetUserId);
       await followingRecord.save();
 
       // Update Followers collection for the user to be followed
-      let followerRecord = await Followers.findOne({ user: userIdToFollow });
+      let followerRecord = await Followers.findOne({ user: targetUserId });
       if (!followerRecord) {
-        followerRecord = new Followers({ user: userIdToFollow });
+        followerRecord = new Followers({ user: targetUserId });
       }
 
-      followerRecord.followers.push(loggedInUserId);
+      followerRecord.followers.push(userId);
       await followerRecord.save();
 
       // Increment followersCount for the user being followed
       await User.updateOne(
-        { _id: userIdToFollow },
+        { _id: targetUserId },
         { $inc: { followersCount: 1 } }
       );
 
       // Increment followingCount for the logged-in user
-      await User.updateOne(
-        { _id: loggedInUserId },
-        { $inc: { followingCount: 1 } }
-      );
+      await User.updateOne({ _id: userId }, { $inc: { followingCount: 1 } });
 
       res.status(200).json({ message: "Followed successfully" });
     } catch (error) {

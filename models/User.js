@@ -34,14 +34,19 @@ const userSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
-  subscribersCount: {
-    type: Number,
-    default: 0,
-  },
   followingCount: {
     type: Number,
     default: 0,
   },
+  subscribersCount: {
+    type: Number,
+    default: 0,
+  },
+  subscriptionsCount: {
+    type: Number,
+    default: 0,
+  },
+
   notificationsCount: {
     type: Number,
     default: 0,

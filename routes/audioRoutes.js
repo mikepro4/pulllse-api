@@ -7,8 +7,10 @@ const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 const keys = require("../config/keys");
 const { v4: uuidv4 } = require("uuid");
 const mongoose = require("mongoose");
+
 const Audios = mongoose.model("Audio");
 const User = mongoose.model("User");
+const createLog = require("../middlewares/createLog");
 
 const s3Client = new S3Client({
   region: "us-east-2",
@@ -19,7 +21,7 @@ const s3Client = new S3Client({
 });
 
 module.exports = (app) => {
-  app.post("/api/deleteAudio", async (req, res) => {
+  app.post("/api/deleteAudio", createLog.logUserAction, async (req, res) => {
     try {
       const { key, user } = req.body;
 
@@ -71,12 +73,11 @@ module.exports = (app) => {
     }
   });
 
-  app.post("/api/saveAudioLink", async (req, res) => {
+  app.post("/api/saveAudioLink", createLog.logUserAction, async (req, res) => {
     try {
-      const { audioLink, name, duration, user } = req.body;
+      const { audioLink, duration, user } = req.body;
 
       const newAudio = new Audios({
-        name,
         audioLink,
         duration,
         user,
