@@ -9,7 +9,7 @@ require("./models/User");
 
 require("./models/Audio");
 require("./models/Pulse");
-
+require("./models/Feed");
 require("./models/Followers");
 require("./models/Following");
 require("./models/Subscribers");
@@ -31,8 +31,9 @@ mongoose.connect(keys.mongoURI, {
 });
 
 require("./routes/authRoutes")(app);
-require("./routes/uploadRoutes")(app);
+require("./routes/audioRoutes")(app);
 require("./routes/pulseRoutes")(app);
+require("./routes/feedRoutes")(app);
 require("./routes/imageRoutes")(app);
 require("./routes/userInfoRoutes")(app);
 require("./routes/notificationsRoutes")(app);

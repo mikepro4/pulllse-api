@@ -75,10 +75,9 @@ module.exports = (app) => {
 
   app.post("/api/saveAudioLink", createLog.logUserAction, async (req, res) => {
     try {
-      const { audioLink, name, duration, user } = req.body;
+      const { audioLink, duration, user } = req.body;
 
       const newAudio = new Audios({
-        name,
         audioLink,
         duration,
         user,
