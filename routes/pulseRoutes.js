@@ -24,16 +24,15 @@ module.exports = (app) => {
 
       // If the user has followers, update the Feed of each follower
       if (userFollowers && userFollowers.followers.length > 0) {
-        await Promise.all(
-          userFollowers.followers.map(async (followerId) => {
-            await new Feed({
-              dateCreated: new Date(),
-              user: userId,
-              targetUsers: userFollowers.followers,
-              pulse: newPulse._id,
-            }).save();
-          })
-        );
+        let targetUsers = userFollowers.followers;
+        targetUsers.push(newPulse.user);
+
+        await new Feed({
+          dateCreated: new Date(),
+          user: userId,
+          targetUsers: targetUsers,
+          pulse: newPulse._id,
+        }).save();
       }
 
       // Sending the created Pulse as a response
