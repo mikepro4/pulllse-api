@@ -3,13 +3,33 @@ const Feed = mongoose.model("Feed");
 const requireLogin = require("../middlewares/requireLogin");
 
 module.exports = (app) => {
-  app.get("/feed/:userId", requireLogin, async (req, res) => {
-    const { userId } = req.params;
-
+  app.post("/feed/fetchFeed", async (req, res) => {
+    const { userId } = req.body;
+    const ObjectId = mongoose.Types.ObjectId;
+    const userIdObj = new ObjectId(userId);
     try {
       // Finding the Feed by userId and populating it with the details of each Pulse
-      const userFeed = await Feed.findOne({ user: userId })
-        .populate("feedItems")
+      const userFeed = await Feed.find({
+        targetUsers: userIdObj,
+      })
+        .select("-targetUsers")
+        .populate({
+          path: "pulse",
+          model: "Pulse",
+          populate: {
+            path: "audio",
+            model: "Audio",
+          },
+        })
+        .populate({
+          path: "pulse",
+          model: "Pulse",
+          populate: {
+            path: "user",
+            model: "User",
+          },
+        })
+        .populate("user")
         .exec();
 
       if (!userFeed) {
