@@ -23,17 +23,20 @@ module.exports = (app) => {
       const userFollowers = await Followers.findOne({ user: userId });
 
       // If the user has followers, update the Feed of each follower
+      let targetUsers = []
       if (userFollowers && userFollowers.followers.length > 0) {
-        let targetUsers = userFollowers.followers;
+        targetUsers = userFollowers.followers;
         targetUsers.push(newPulse.user);
-
-        await new Feed({
-          dateCreated: new Date(),
-          user: userId,
-          targetUsers: targetUsers,
-          pulse: newPulse._id,
-        }).save();
+      } else {
+        targetUsers.push(newPulse.user);
       }
+
+      await new Feed({
+        dateCreated: new Date(),
+        user: userId,
+        targetUsers: targetUsers,
+        pulse: newPulse._id,
+      }).save();
 
       // Sending the created Pulse as a response
       res.json(newPulse);
@@ -47,7 +50,9 @@ module.exports = (app) => {
 
   app.get("/pulse/fetchPulse", requireLogin, async (req, res) => {
     try {
-      const pulses = await Pulse.find().populate("user").populate("audio");
+      const pulses = await Pulse.find()
+        .populate("user")
+        .populate("audio")
 
       res.json(pulses);
     } catch (error) {

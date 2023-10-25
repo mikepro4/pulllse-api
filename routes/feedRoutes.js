@@ -4,12 +4,18 @@ const requireLogin = require("../middlewares/requireLogin");
 
 module.exports = (app) => {
   app.post("/feed/fetchFeed", async (req, res) => {
-    const { userId } = req.body;
+    const { userId, page = 1, limit, timeStamp } = req.body;
+    console.log(userId)
+
     const ObjectId = mongoose.Types.ObjectId;
     const userIdObj = new ObjectId(userId);
+    const skip = (page - 1) * limit;
     try {
       // Finding the Feed by userId and populating it with the details of each Pulse
       const userFeed = await Feed.find({
+      //   dateCreated: {
+      //     $lte: timeStamp
+      // },
         targetUsers: userIdObj,
       })
         .select("-targetUsers")
@@ -29,7 +35,8 @@ module.exports = (app) => {
             model: "User",
           },
         })
-        .populate("user")
+        .limit(limit)
+        .skip(skip)
         .exec();
 
       if (!userFeed) {
