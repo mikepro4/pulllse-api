@@ -54,7 +54,7 @@ require("./routes/imageRoutes")(app);
 require("./routes/userInfoRoutes")(app);
 require("./routes/notificationsRoutes")(app);
 require("./routes/subscribersRoutes")(app, io);
-require("./routes/followersRoutes")(app);
+require("./routes/followersRoutes")(app, io);
 
 const PORT = process.env.PORT || 4000;
 server.listen(PORT);

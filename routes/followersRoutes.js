@@ -35,7 +35,7 @@ async function enhanceUserData(
   );
 }
 
-module.exports = (app) => {
+module.exports = (app, io) => {
   app.get("/fetchFollowers", async (req, res) => {
     try {
       const loggedInUserId = req.query.loggedInUserId;
@@ -137,7 +137,11 @@ module.exports = (app) => {
       }
 
       // Update Following collection for the logged-in user
-      let followingRecord = await Following.findOne({ user: userId });
+      let followingRecord = await Following.findOne({ user: userId }).populate(
+        "user",
+        "userName"
+      );
+      console.log("followingRecord", followingRecord);
 
       if (!followingRecord) {
         followingRecord = new Following({
@@ -172,6 +176,12 @@ module.exports = (app) => {
 
       // Increment followingCount for the logged-in user
       await User.updateOne({ _id: userId }, { $inc: { followingCount: 1 } });
+
+      io.emit("notification", {
+        to: targetUserId,
+        message: `User ${followingRecord.user.userName} has sent you a subscription request`,
+        // You can add more data to the emitted event as needed
+      });
 
       res.status(200).json({ message: "Followed successfully" });
     } catch (error) {
