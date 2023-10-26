@@ -35,7 +35,7 @@ async function enhanceUserData(
   );
 }
 
-module.exports = (app, io) => {
+module.exports = (app, io, userSockets) => {
   app.get("/fetchFollowers", async (req, res) => {
     try {
       const loggedInUserId = req.query.loggedInUserId;
@@ -146,11 +146,11 @@ module.exports = (app, io) => {
         });
       }
 
-      if (followingRecord.following.includes(targetUserId)) {
-        return res
-          .status(400)
-          .json({ message: "You are already following this user" });
-      }
+      // if (followingRecord.following.includes(targetUserId)) {
+      //   return res
+      //     .status(400)
+      //     .json({ message: "You are already following this user" });
+      // }
 
       followingRecord.following.push(targetUserId);
       await followingRecord.save();
@@ -186,11 +186,12 @@ module.exports = (app, io) => {
       });
       await notification.save();
 
-      io.emit("notification", {
-        to: targetUserId,
-        message: `User ${updatedUser.userName} is now following you`,
-        // You can add more data to the emitted event as needed
-      });
+      const targetSocketId = userSockets[targetUserId];
+      if (targetSocketId) {
+        io.to(targetSocketId).emit("notification", {
+          message: `User ${updatedUser.userName} is now following you`,
+        });
+      }
 
       res.status(200).json({ message: "Followed successfully" });
     } catch (error) {
