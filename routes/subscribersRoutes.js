@@ -75,7 +75,7 @@ async function enhanceSubscribingUserData(
   );
 }
 
-module.exports = (app) => {
+module.exports = (app, io) => {
   app.get("/fetchSubscribers", async (req, res) => {
     try {
       const userId = req.query.userId;
@@ -355,6 +355,13 @@ module.exports = (app) => {
           type: "subscription_request",
         });
         await notification.save();
+
+        // Sending a real-time notification using Socket.io
+        io.emit("notification", {
+          to: targetUserId,
+          message: "You have a new subscription request!",
+          // You can add more data to the emitted event as needed
+        });
 
         res.status(200).json({ message: "Subscription request sent" });
       } catch (error) {
