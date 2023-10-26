@@ -13,8 +13,8 @@ const notificationSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ["follow_request", "subscription_request"],
-    default: "follow_request",
+    enum: ["follow", "subscription_request"],
+    default: "follow",
   },
   seen: {
     type: Boolean,

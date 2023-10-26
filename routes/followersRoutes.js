@@ -137,10 +137,7 @@ module.exports = (app, io) => {
       }
 
       // Update Following collection for the logged-in user
-      let followingRecord = await Following.findOne({ user: userId }).populate(
-        "user",
-        "userName"
-      );
+      let followingRecord = await Following.findOne({ user: userId });
       console.log("followingRecord", followingRecord);
 
       if (!followingRecord) {
@@ -149,7 +146,6 @@ module.exports = (app, io) => {
         });
       }
 
-      // Check if the user is already following the userToFollow
       if (followingRecord.following.includes(targetUserId)) {
         return res
           .status(400)
@@ -160,7 +156,9 @@ module.exports = (app, io) => {
       await followingRecord.save();
 
       // Update Followers collection for the user to be followed
-      let followerRecord = await Followers.findOne({ user: targetUserId });
+      let followerRecord = await Followers.findOne({
+        user: targetUserId,
+      });
       if (!followerRecord) {
         followerRecord = new Followers({ user: targetUserId });
       }
@@ -175,11 +173,22 @@ module.exports = (app, io) => {
       );
 
       // Increment followingCount for the logged-in user
-      await User.updateOne({ _id: userId }, { $inc: { followingCount: 1 } });
+      const updatedUser = await User.findOneAndUpdate(
+        { _id: userId },
+        { $inc: { followingCount: 1 } },
+        { new: true } // This option returns the modified document rather than the original.
+      );
+
+      const notification = new Notifications({
+        to: targetUserId,
+        from: userId,
+        type: "follow",
+      });
+      await notification.save();
 
       io.emit("notification", {
         to: targetUserId,
-        message: `User ${followingRecord.user.userName} has sent you a subscription request`,
+        message: `User ${updatedUser.userName} is now following you`,
         // You can add more data to the emitted event as needed
       });
 

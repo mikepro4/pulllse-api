@@ -26,4 +26,32 @@ module.exports = (app) => {
       res.status(500).json({ message: "Server Error" });
     }
   });
+
+  app.post("/markNotificationSeen", async (req, res) => {
+    try {
+      const { notificationId } = req.body;
+
+      // Fetching the Notification by its ID
+      let notificationRecord = await Notifications.findOne({
+        _id: notificationId,
+      });
+      if (!notificationRecord) {
+        return res.status(404).json({ message: "Notification not found" });
+      }
+
+      // Updating the 'seen' property of the Notification to true
+      notificationRecord.seen = true;
+      await notificationRecord.save();
+
+      res.status(200).json({
+        message: "Notification marked as seen",
+        notification: notificationRecord,
+      });
+    } catch (error) {
+      console.error("Error marking notification as seen:", error);
+      res.status(500).send("Server Error");
+    } finally {
+      console.log("Notification marked as seen");
+    }
+  });
 };
