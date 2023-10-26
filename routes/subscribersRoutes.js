@@ -338,7 +338,7 @@ module.exports = (app, io) => {
         // Updating the Subscriptions collection
         let subscriptionRecord = await Subscriptions.findOne({
           user: userId,
-        }).populate("user", "userName");
+        });
 
         if (!subscriptionRecord) {
           subscriptionRecord = new Subscriptions({ user: userId });
@@ -357,10 +357,12 @@ module.exports = (app, io) => {
         });
         await notification.save();
 
+        const userRecord = await User.findById(userId);
+
         // Sending a real-time notification using Socket.io
         io.emit("notification", {
           to: targetUserId,
-          message: `User ${subscriptionRecord.user.userName} has sent you a subscription request`,
+          message: `User ${userRecord.userName} has sent you a subscription request`,
           // You can add more data to the emitted event as needed
         });
 
