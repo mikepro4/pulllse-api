@@ -75,7 +75,7 @@ async function enhanceSubscribingUserData(
   );
 }
 
-module.exports = (app) => {
+module.exports = (app, io, userSockets) => {
   app.get("/fetchSubscribers", async (req, res) => {
     try {
       const userId = req.query.userId;
@@ -339,6 +339,7 @@ module.exports = (app) => {
         let subscriptionRecord = await Subscriptions.findOne({
           user: userId,
         });
+
         if (!subscriptionRecord) {
           subscriptionRecord = new Subscriptions({ user: userId });
         }
@@ -356,7 +357,18 @@ module.exports = (app) => {
         });
         await notification.save();
 
-        res.status(200).json({ message: "Subscription request sent" });
+        const userRecord = await User.findById(userId);
+        console.log(userSockets);
+        const targetSocketId = userSockets[targetUserId];
+        if (targetSocketId) {
+          io.to(targetSocketId).emit("notification", {
+            message: `User ${userRecord.userName} has sent you a subscription request`,
+          });
+        }
+
+        res.status(200).json({
+          message: "Subscription request sent",
+        });
       } catch (error) {
         console.error("Error subscribing to user:", error);
         res.status(500).send("Server Error");

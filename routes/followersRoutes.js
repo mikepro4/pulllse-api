@@ -35,7 +35,7 @@ async function enhanceUserData(
   );
 }
 
-module.exports = (app) => {
+module.exports = (app, io, userSockets) => {
   app.get("/fetchFollowers", async (req, res) => {
     try {
       const loggedInUserId = req.query.loggedInUserId;
@@ -138,6 +138,7 @@ module.exports = (app) => {
 
       // Update Following collection for the logged-in user
       let followingRecord = await Following.findOne({ user: userId });
+      console.log("followingRecord", followingRecord);
 
       if (!followingRecord) {
         followingRecord = new Following({
@@ -145,18 +146,19 @@ module.exports = (app) => {
         });
       }
 
-      // Check if the user is already following the userToFollow
-      if (followingRecord.following.includes(targetUserId)) {
-        return res
-          .status(400)
-          .json({ message: "You are already following this user" });
-      }
+      // if (followingRecord.following.includes(targetUserId)) {
+      //   return res
+      //     .status(400)
+      //     .json({ message: "You are already following this user" });
+      // }
 
       followingRecord.following.push(targetUserId);
       await followingRecord.save();
 
       // Update Followers collection for the user to be followed
-      let followerRecord = await Followers.findOne({ user: targetUserId });
+      let followerRecord = await Followers.findOne({
+        user: targetUserId,
+      });
       if (!followerRecord) {
         followerRecord = new Followers({ user: targetUserId });
       }
@@ -171,7 +173,25 @@ module.exports = (app) => {
       );
 
       // Increment followingCount for the logged-in user
-      await User.updateOne({ _id: userId }, { $inc: { followingCount: 1 } });
+      const updatedUser = await User.findOneAndUpdate(
+        { _id: userId },
+        { $inc: { followingCount: 1 } },
+        { new: true } // This option returns the modified document rather than the original.
+      );
+
+      const notification = new Notifications({
+        to: targetUserId,
+        from: userId,
+        type: "follow",
+      });
+      await notification.save();
+
+      const targetSocketId = userSockets[targetUserId];
+      if (targetSocketId) {
+        io.to(targetSocketId).emit("notification", {
+          message: `User ${updatedUser.userName} is now following you`,
+        });
+      }
 
       res.status(200).json({ message: "Followed successfully" });
     } catch (error) {
