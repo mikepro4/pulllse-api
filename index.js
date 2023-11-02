@@ -6,6 +6,7 @@ const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
 const keys = require("./config/keys");
 const cors = require("cors");
+const cookieParser = require("cookie-parser");
 
 require("./models/User");
 
@@ -54,6 +55,7 @@ io.on("connection", (socket) => {
 app.use(bodyParser.json());
 app.use(passport.initialize());
 app.use(cors());
+app.use(cookieParser());
 
 mongoose.connect(keys.mongoURI, {
   useNewUrlParser: true,
