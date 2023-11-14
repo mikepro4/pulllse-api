@@ -6,7 +6,6 @@ const userSchema = new mongoose.Schema({
     type: String,
     unique: true,
     required: true,
-    select: false,
   },
   password: {
     type: String,
@@ -15,8 +14,7 @@ const userSchema = new mongoose.Schema({
   },
   userName: {
     type: String,
-    required: true,
-    unique: true,
+    required: false,
   },
   imageLink: {
     type: String,

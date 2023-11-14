@@ -56,21 +56,21 @@ module.exports = (app) => {
     res.cookie(stateKey, state);
     res.redirect(
       "https://accounts.spotify.com/authorize?" +
-        querystring.stringify({
-          response_type: "code",
-          client_id,
-          scope,
-          redirect_uri,
-          state,
-          show_dialog: true,
-        })
+      querystring.stringify({
+        response_type: "code",
+        client_id,
+        scope,
+        redirect_uri,
+        state,
+        show_dialog: true,
+      })
     );
   });
 
   app.post("/signin", (req, res, next) => {
     passport.authenticate("local", (err, user, info) => {
       if (err) return next(err);
-      if (!user) return res.status(422).send({ error: info.message });
+      if (!user) return res.status(422).send({ error: "error" });
 
       req.logIn(user, { session: false }, async (err) => {
         if (err) return next(err);
@@ -93,7 +93,7 @@ module.exports = (app) => {
 
   app.post("/signup", async (req, res, next) => {
     try {
-      const { email, password, userName } = req.body;
+      const { email, password } = req.body;
 
       let user = await User.findOne({ email: email })
         .select("+email +password")
@@ -102,7 +102,7 @@ module.exports = (app) => {
         return res.status(400).json({ message: "User already registered." });
       }
 
-      user = new User({ email, password, userName });
+      user = new User({ email, password });
 
       await user.save();
 
@@ -117,7 +117,6 @@ module.exports = (app) => {
             email: email,
             userId: user._id.toString(),
             token,
-            userName,
           });
         } catch (error) {
           console.log(error);
@@ -129,4 +128,29 @@ module.exports = (app) => {
       res.status(500).json({ message: "Server Error" });
     }
   });
+
+  app.post("/assignUserName", async (req, res, next) => {
+    try {
+      const { userName, currentUserId } = req.body; // Assuming the current user's ID is sent in the request
+
+      // Check if username already exists
+      let existingUser = await User.findOne({ userName: userName });
+      if (existingUser) {
+        return res.status(400).json({ message: "Username not available." });
+      }
+
+      // If it doesn't exist, update the current user's userName
+      let user = await User.findByIdAndUpdate(currentUserId, { userName: userName }, { new: true });
+      if (!user) {
+        return res.status(404).json({ message: "User not found." });
+      }
+
+      res.send(user);
+
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Server Error" });
+    }
+  });
+
 };
